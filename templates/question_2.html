@@ -1,0 +1,20 @@
+{% extends 'base.html' %} {% block title %}Question 0{%
+endblock %} {% block content %}
+<form action="/answer" method="POST">
+	<p>{{ survey.questions[2].question }}</p>
+
+	<label for="answer-no">Less than $10,000</label>
+	<input
+		type="radio"
+		name="answer-no"
+		value="Less than $10,000"
+	/>
+	<label for="answer-yes">$10,000 or more</label>
+	<input
+		type="radio"
+		name="answer-yes"
+		value="$10,000 or more"
+	/>
+	<button type="submit">Submit</button>
+</form>
+{% endblock %}

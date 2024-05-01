@@ -1,0 +1,12 @@
+{% extends 'base.html' %} {% block title %}Question 0{%
+endblock %} {% block content %}
+<form action="/answer" method="POST">
+	<p>{{ survey.questions[3].question }}</p>
+
+	<label for="answer-yes">Yes</label>
+	<input type="radio" name="answer-yes" value="Yes" />
+	<label for="answer-no">No</label>
+	<input type="radio" name="answer-no" value="No" />
+	<button type="submit">Submit</button>
+</form>
+{% endblock %}
