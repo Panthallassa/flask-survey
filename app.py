@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, request, flash, session
+from flask import Flask, render_template, redirect, url_for, request, flash, session, make_response
 from flask_debugtoolbar import DebugToolbarExtension
 from surveys import satisfaction_survey
 
@@ -10,10 +10,12 @@ app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 
 debug = DebugToolbarExtension(app)
 
-responses = []
-
-@app.route('/')
+@app.route('/', methods=['POST', 'GET'])
 def home_page():
+    if request.cookies.get('survey_completed'):
+        return render_template('survey_complete.html')
+
+    session['responses'] = []
     return render_template('start_survey.html', survey=satisfaction_survey)
 
 @app.route('/answer', methods=['POST', 'GET'])
@@ -28,30 +30,41 @@ def handle_answer():
     else:
         # Handle error if no answer submitted
         return redirect(url_for('home_page'))
-
+    
+    responses = session['responses']
     responses.append(answer)
-    next_question = len(responses)
-    if next_question == len(satisfaction_survey.questions) - 1 and answer:
-        return redirect(url_for('survey_complete'))
+    session['responses'] = responses
+    
+    next_question = len(session['responses'])
+    if next_question == len(satisfaction_survey.questions) and answer:
+        response = make_response(redirect(url_for('survey_complete')))
+        response.set_cookie('survey_completed', 'true')
+        return response
     else:
         return redirect(url_for('questions', num=next_question))
 
-@app.route('/start_survey')
+@app.route('/start_survey', methods=['POST', 'GET'])
 def start_survey():
+    session['responses'] = []
     return redirect(url_for('questions', num=0))
 
 @app.route('/questions/<int:num>')
 def questions(num):
-    if len(responses) == len(satisfaction_survey.questions):
+    if request.cookies.get('survey_completed'):
         return redirect(url_for('survey_complete'))
-    elif num == len(responses):
+    
+    elif num < len(session['responses']):
+        return redirect(url_for('questions', num=num + 1))
+    
+    elif num == len(session['responses']):
         if num < len(satisfaction_survey.questions):
             return render_template(f'question_{num}.html', survey=satisfaction_survey, question=satisfaction_survey.questions[num])
         else:
             return redirect(url_for('survey_complete'))
     else:
         flash("Please answer the questions in order.")
-        return redirect(url_for('questions', num=len(responses)))
+        print(session['responses'])
+        return redirect(url_for('questions', num=len(session['responses'])))
     
 @app.route('/complete')
 def survey_complete():
